@@ -12,5 +12,7 @@ The extension allows you to choose when you want to see tooltips (quickinfo) by 
 
 The chosen key/keys must be pressed when mouse hovers to get tooltips (quickinfo).
 
+Made for Microsoft Visual Studio 2022 Community Edition.
+
 ## License
 [Apache 2.0](LICENSE)
