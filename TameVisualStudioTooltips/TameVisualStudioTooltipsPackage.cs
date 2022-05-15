@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
 namespace TameVisualStudioTooltips3
@@ -26,6 +27,7 @@ namespace TameVisualStudioTooltips3
     [PackageRegistration( UseManagedResourcesOnly = true, AllowsBackgroundLoading = true )]
     [Guid( TameVisualStudioTooltipsPackage.PackageGuidString )]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideAutoLoad( UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad )]
     public sealed class TameVisualStudioTooltipsPackage : AsyncPackage
     {
         /// <summary>
@@ -46,7 +48,7 @@ namespace TameVisualStudioTooltips3
         {
             // When initialized asynchronously, the current thread may be a background thread at this point.
             // Do any initialization that requires the UI thread after switching to the UI thread.
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync( cancellationToken );
+            await JoinableTaskFactory.SwitchToMainThreadAsync( cancellationToken );
             await TameQuickInfoCommand.InitializeAsync(this);
         }
 

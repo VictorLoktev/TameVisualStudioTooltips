@@ -1,9 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
-using System.Globalization;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
@@ -18,40 +15,96 @@ namespace TameVisualStudioTooltips3
     /// </summary>
     internal sealed class TameQuickInfoCommand
     {
+        #region While in Editing mode
+
         /// <summary>
         /// Command ID for always show tooltips.
         /// </summary>
-        public const int CommandIdAlways = 0x0100;
+        public const int CommandIdAlwaysEdit = 0x1100;
 
         /// <summary>
         /// Command ID for tooltips displayes when CTRL & SHIFT are pressed.
         /// </summary>
-        public const int CommandIdCtrlShift = 0x0101;
+        public const int CommandIdCtrlShiftEdit = 0x1101;
 
         /// <summary>
         /// Command ID for tooltips displayes when CTRL & ALT & SHIFT are pressed.
         /// </summary>
-        public const int CommandIdCtrlAltShift = 0x0102;
+        public const int CommandIdCtrlAltShiftEdit = 0x1102;
 
         /// <summary>
         /// Command ID for tooltips displayes when CTRL & ALT are pressed.
         /// </summary>
-        public const int CommandIdCtrlAlt = 0x0103;
+        public const int CommandIdCtrlAltEdit = 0x1103;
 
         /// <summary>
         /// Command ID for tooltips displayes when CTRL is pressed.
         /// </summary>
-        public const int CommandIdCtrl = 0x0104;
+        public const int CommandIdCtrlEdit = 0x1104;
 
         /// <summary>
         /// Command ID for tooltips displayes when Shift is pressed.
         /// </summary>
-        public const int CommandIdShift = 0x0105;
+        public const int CommandIdShiftEdit = 0x1105;
 
         /// <summary>
         /// Command ID for tooltips displayes when ALT is pressed.
         /// </summary>
-        public const int CommandIdAlt = 0x0106;
+        public const int CommandIdAltEdit = 0x1106;
+
+        private readonly int[] EditCommands =
+            {
+                CommandIdAlwaysEdit, CommandIdCtrlShiftEdit, CommandIdCtrlAltShiftEdit,
+                CommandIdCtrlAltEdit, CommandIdCtrlEdit, CommandIdShiftEdit, CommandIdAltEdit
+            };
+
+        #endregion
+
+        #region While in Debugger break mode
+
+        /// <summary>
+        /// Command ID for always show tooltips.
+        /// </summary>
+        public const int CommandIdAlwaysDebug = 0x2100;
+
+        /// <summary>
+        /// Command ID for tooltips displayes when CTRL & SHIFT are pressed.
+        /// </summary>
+        public const int CommandIdCtrlShiftDebug = 0x2101;
+
+        /// <summary>
+        /// Command ID for tooltips displayes when CTRL & ALT & SHIFT are pressed.
+        /// </summary>
+        public const int CommandIdCtrlAltShiftDebug = 0x2102;
+
+        /// <summary>
+        /// Command ID for tooltips displayes when CTRL & ALT are pressed.
+        /// </summary>
+        public const int CommandIdCtrlAltDebug = 0x2103;
+
+        /// <summary>
+        /// Command ID for tooltips displayes when CTRL is pressed.
+        /// </summary>
+        public const int CommandIdCtrlDebug = 0x2104;
+
+        /// <summary>
+        /// Command ID for tooltips displayes when Shift is pressed.
+        /// </summary>
+        public const int CommandIdShiftDebug = 0x2105;
+
+        /// <summary>
+        /// Command ID for tooltips displayes when ALT is pressed.
+        /// </summary>
+        public const int CommandIdAltDebug = 0x2106;
+
+        private readonly int[] DebugCommands =
+            {
+                CommandIdAlwaysDebug, CommandIdCtrlShiftDebug, CommandIdCtrlAltShiftDebug,
+                CommandIdCtrlAltDebug, CommandIdCtrlDebug, CommandIdShiftDebug, CommandIdAltDebug
+            };
+
+        #endregion
+
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -64,6 +117,11 @@ namespace TameVisualStudioTooltips3
         private readonly AsyncPackage package;
 
         /// <summary>
+        /// VS Package that provides this command, not null.
+        /// </summary>
+        private Dictionary<int, MenuCommand> Commands = new Dictionary<int, MenuCommand>();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="TameQuickInfoCommand"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
@@ -72,42 +130,31 @@ namespace TameVisualStudioTooltips3
         private TameQuickInfoCommand( AsyncPackage package, OleMenuCommandService commandService )
         {
             this.package = package ?? throw new ArgumentNullException( nameof( package ) );
-            commandService = commandService ?? throw new ArgumentNullException( nameof( commandService ) );
+            if( commandService == null )
+                throw new ArgumentNullException( nameof( commandService ) );
 
+#pragma warning disable VSTHRD102 // Implement internal logic asynchronously
+            var options = ThreadHelper.JoinableTaskFactory.Run( TameQuickInfoOptions.GetLiveInstanceAsync );
+#pragma warning restore VSTHRD102 // Implement internal logic asynchronously
+            int debug = options.ShowTooltipsDebug;
+            int edit = options.ShowTooltipsEdit;
+
+            foreach( var id in EditCommands )
             {
-                var menuCommandID = new CommandID( CommandSet, CommandIdAlways );
-                var menuItem = new MenuCommand( this.ExecuteAllways, menuCommandID );
+                var menuCommandID = new CommandID( CommandSet, id );
+                var menuItem = new MenuCommand( this.ExecuteCommand, menuCommandID );
+                menuItem.Checked = id == edit;
                 commandService.AddCommand( menuItem );
+                Commands.Add( id, menuItem );
             }
+
+            foreach( var id in DebugCommands )
             {
-                var menuCommandID = new CommandID( CommandSet, CommandIdCtrlShift );
-                var menuItem = new MenuCommand( this.ExecuteCtrlShift, menuCommandID );
+                var menuCommandID = new CommandID( CommandSet, id );
+                var menuItem = new MenuCommand( this.ExecuteCommand, menuCommandID );
+                menuItem.Checked = id == debug;
                 commandService.AddCommand( menuItem );
-            }
-            {
-                var menuCommandID = new CommandID( CommandSet, CommandIdCtrlAltShift );
-                var menuItem = new MenuCommand( this.ExecuteCtrlAltShift, menuCommandID );
-                commandService.AddCommand( menuItem );
-            }
-            {
-                var menuCommandID = new CommandID( CommandSet, CommandIdCtrlAlt );
-                var menuItem = new MenuCommand( this.ExecuteCtrlAlt, menuCommandID );
-                commandService.AddCommand( menuItem );
-            }
-            {
-                var menuCommandID = new CommandID( CommandSet, CommandIdCtrl );
-                var menuItem = new MenuCommand( this.ExecuteCtrl, menuCommandID );
-                commandService.AddCommand( menuItem );
-            }
-            {
-                var menuCommandID = new CommandID( CommandSet, CommandIdShift );
-                var menuItem = new MenuCommand( this.ExecuteShift, menuCommandID );
-                commandService.AddCommand( menuItem );
-            }
-            {
-                var menuCommandID = new CommandID( CommandSet, CommandIdAlt );
-                var menuItem = new MenuCommand( this.ExecuteAlt, menuCommandID );
-                commandService.AddCommand( menuItem );
+                Commands.Add( id, menuItem );
             }
         }
 
@@ -145,31 +192,26 @@ namespace TameVisualStudioTooltips3
             Instance = new TameQuickInfoCommand( package, commandService );
         }
 
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void ExecuteAllways( object sender, EventArgs e )
+        private void UncheckEditComamnds()
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
+            foreach( var id in EditCommands )
+            {
+                if( Commands.TryGetValue( id, out var menuItem ) )
+                {
+                    menuItem.Checked = false;
+                }
+            }
+        }
 
-            TameQuickInfoOptions.Instance.ShowTooltips = 0;
-            TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover";
-            string title = "TameQuickInfo On/Off";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST );
+        private void UncheckDebugComamnds()
+        {
+            foreach( var id in DebugCommands )
+            {
+                if( Commands.TryGetValue( id, out var menuItem ) )
+                {
+                    menuItem.Checked = false;
+                }
+            }
         }
 
         /// <summary>
@@ -179,150 +221,124 @@ namespace TameVisualStudioTooltips3
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void ExecuteCtrlShift( object sender, EventArgs e )
+        private void ExecuteCommand( object sender, EventArgs e )
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            TameQuickInfoOptions.Instance.ShowTooltips = 1;
+            string message;
+            string title;
+
+            int id = ( sender as MenuCommand ).CommandID.ID;
+
+            switch( id )
+            {
+            case CommandIdAlwaysEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+            case CommandIdCtrlShiftEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & SHIFT keys are pressed";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+            case CommandIdCtrlAltShiftEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & SHIFT & ALT keys are pressed";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+            case CommandIdCtrlAltEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & ALT keys are pressed";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+            case CommandIdCtrlEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL key is pressed";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+            case CommandIdShiftEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when SHIFT key is pressed";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+            case CommandIdAltEdit:
+                TameQuickInfoOptions.Instance.ShowTooltipsEdit = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when ALT key is pressed";
+                title = "TameQuickInfo On/Off in Editing mode";
+                UncheckEditComamnds();
+                break;
+
+
+            case CommandIdAlwaysDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+            case CommandIdCtrlShiftDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & SHIFT keys are pressed";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+            case CommandIdCtrlAltShiftDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & SHIFT & ALT keys are pressed";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+            case CommandIdCtrlAltDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & ALT keys are pressed";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+            case CommandIdCtrlDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL key is pressed";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+            case CommandIdShiftDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when SHIFT key is pressed";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+            case CommandIdAltDebug:
+                TameQuickInfoOptions.Instance.ShowTooltipsDebug = id;
+                message = "Tooltips (QuickInfo) will be displayed by mouse hover when ALT key is pressed";
+                title = "TameQuickInfo On/Off in Debugger break mode";
+                UncheckDebugComamnds();
+                break;
+
+
+            default:
+                throw new NotSupportedException( "Unknown command ID" );
+            }
+
+            ( sender as MenuCommand ).Checked = true;
+
             TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & SHIFT keys are pressed";
-            string title = "TameQuickInfo On/Off";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST );
-        }
-
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void ExecuteCtrlAltShift( object sender, EventArgs e )
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            TameQuickInfoOptions.Instance.ShowTooltips = 2;
-            TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & SHIFT & ALT keys are pressed";
-            string title = "TameQuickInfo On/Off";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST );
-        }
-
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void ExecuteCtrlAlt( object sender, EventArgs e )
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            TameQuickInfoOptions.Instance.ShowTooltips = 3;
-            TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL & ALT keys are pressed";
-            string title = "TameQuickInfo On/Off";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST );
-        }
-
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void ExecuteCtrl( object sender, EventArgs e )
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            TameQuickInfoOptions.Instance.ShowTooltips = 4;
-            TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover when CTRL key is pressed";
-            string title = "TameQuickInfo On/Off";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST );
-        }
-
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void ExecuteShift( object sender, EventArgs e )
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            TameQuickInfoOptions.Instance.ShowTooltips = 5;
-            TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover when SHIFT key is pressed";
-            string title = "TameQuickInfo On/Off";
-
-            // Show a message box to prove we were here
-            VsShellUtilities.ShowMessageBox(
-                this.package,
-                message,
-                title,
-                OLEMSGICON.OLEMSGICON_INFO,
-                OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST );
-        }
-
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void ExecuteAlt( object sender, EventArgs e )
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            TameQuickInfoOptions.Instance.ShowTooltips = 6;
-            TameQuickInfoOptions.Instance.Save();
-
-            string message = "Tooltips (QuickInfo) will be displayed by mouse hover when ALT key is pressed";
-            string title = "TameQuickInfo On/Off";
 
             // Show a message box to prove we were here
             VsShellUtilities.ShowMessageBox(
