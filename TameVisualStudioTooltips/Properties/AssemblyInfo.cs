@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle( "TameVisualStudioTooltips3" )]
+[assembly: AssemblyTitle( "Tame Visual Studio Tooltips 2022" )]
 [assembly: AssemblyDescription( "Tames the Visual Studio Editor Tooltips by showing QuickInfo only when mouse hovers with combination of pressed keys: CTRL+SHIFT, CTRL+SHIFT+ALT, CTRL+ALT, CTRL, SHIFT, ALT" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
-[assembly: AssemblyProduct( "TameVisualStudioTooltips3" )]
-[assembly: AssemblyCopyright( "Victor Loktev" )]
+[assembly: AssemblyProduct( "Tame Visual Studio Tooltips 2022" )]
+[assembly: AssemblyCopyright( "Victor Loktev, 2022" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -28,5 +28,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion( "1.3.1.0" )]
-[assembly: AssemblyFileVersion( "1.3.1.0" )]
+[assembly: AssemblyVersion( "1.4.2.0" )]
+[assembly: AssemblyFileVersion( "1.4.2.0" )]

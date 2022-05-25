@@ -55,7 +55,7 @@
          must be a menu. -->
 		<Groups>
 			<Group guid="guidTameVisualStudioTooltipsPackageCmdSet" id="ToolsMenuGroup" priority="0x0600">
-				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_EXTENSIONS"/>
 			</Group>
 			<Group guid="guidTameVisualStudioTooltipsPackageCmdSet" id="TameQuickInfoMenuGroupEdit" priority="0x0601">
 				<Parent guid="guidTameVisualStudioTooltipsPackageCmdSet" id="TameQuickInfoMenuEdit"/>
@@ -207,5 +207,15 @@
 			<IDSymbol name="TameQuickInfoCommand6Debug" value="0x2106" />
 		</GuidSymbol>
 
+		<!--
+MS VS menu identifiers
+https://docs.microsoft.com/ru-ru/visualstudio/extensibility/internals/guids-and-ids-of-visual-studio-menus?view=vs-2022
+
+IDM_VS_MENU_EXTENSIONS is undefined, so use it's code - 0x0091
+-->
+		<GuidSymbol name="guidSHLMainMenu" value="{d309f791-903f-11d0-9efc-00a0c911004f}">
+			<IDSymbol name="IDM_VS_MENU_EXTENSIONS" value="0x0091" />
+		</GuidSymbol>
+		
 	</Symbols>
 </CommandTable>

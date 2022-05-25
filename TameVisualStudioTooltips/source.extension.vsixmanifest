@@ -1,16 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="cbd35853-f7a3-4fa7-94cb-ab46e2dd7b07" Version="1.3" Language="en-US" Publisher="Victor Loktev" />
-        <DisplayName>TameVisualStudioTooltips3</DisplayName>
-        <Description xml:space="preserve">Tames the Visual Studio Editor Tooltips by showing QuickInfo only when mouse hovers with combination of pressed keys: CTRL+SHIFT, CTRL+SHIFT+ALT, CTRL+ALT, CTRL, SHIFT, ALT</Description>
+        <Identity Id="Tame Visual Studio Tooltips 2022.cbd35853-f7a3-4fa7-94cb-ab46e2dd7b07" Version="1.4.2" Language="en-US" Publisher="Victor Loktev" />
+        <DisplayName>Tame Visual Studio Tooltips 2022</DisplayName>
+        <Description xml:space="preserve">Removes visual noise around the mouse cursor. the Visual Studio Editor Tooltips by showing QuickInfo only when special keys are pressed.</Description>
         <Tags>editor, tooltip, tooltips, quickinfo, tame visual studio, Ctrl, Shift</Tags>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
             <ProductArchitecture>amd64</ProductArchitecture>
         </InstallationTarget>
-	</Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0, 18.0)" >
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0, 18.0)" >
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+    </Installation>
     <Dependencies>
         <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.7.2,)" />
     </Dependencies>

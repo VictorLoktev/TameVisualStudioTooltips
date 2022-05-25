@@ -1,5 +1,7 @@
 # Disable unwanted editor tooltips (quickinfo)
 
+## Removes visual noise around the mouse cursor.
+
 By default, Visual Studio displays tooltips (quickinfo) when your mouse hovers anything in your code.
 The extension allows you to choose when you want to see tooltips (quickinfo) by selecting preferable keys combination:
 
@@ -12,7 +14,7 @@ The extension allows you to choose when you want to see tooltips (quickinfo) by 
 
 The chosen key/keys must be pressed when mouse hovers to get tooltips (quickinfo).
 
-Made for Microsoft Visual Studio 2022 Community Edition.
+* Works in Visual Studio **2022** **x64** (Community, Professional, Enterprise)
 
 ## License
 [Apache 2.0](LICENSE)

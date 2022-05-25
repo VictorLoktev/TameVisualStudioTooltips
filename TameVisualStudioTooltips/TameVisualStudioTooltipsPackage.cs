@@ -28,6 +28,7 @@ namespace TameVisualStudioTooltips3
     [Guid( TameVisualStudioTooltipsPackage.PackageGuidString )]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideAutoLoad( UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad )]
+    [InstalledProductRegistration("#110", "#112", "1.4.2", IconResourceID = 400)] // Info on this package for Help/About
     public sealed class TameVisualStudioTooltipsPackage : AsyncPackage
     {
         /// <summary>
